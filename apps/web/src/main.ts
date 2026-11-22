@@ -951,8 +951,42 @@ document.querySelectorAll<HTMLButtonElement>(".hint-link").forEach((btn) => {
   });
 });
 
+const navToggle = document.querySelector<HTMLButtonElement>("#nav-toggle");
+const headerNav = document.querySelector<HTMLElement>("#header-nav");
+
+function setMobileNavOpen(open: boolean): void {
+  if (!navToggle || !headerNav) return;
+  headerNav.classList.toggle("is-open", open);
+  navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  navToggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+}
+
+function closeMobileNav(): void {
+  setMobileNavOpen(false);
+}
+
+navToggle?.addEventListener("click", () => {
+  const open = navToggle.getAttribute("aria-expanded") !== "true";
+  setMobileNavOpen(open);
+});
+
+headerNav?.querySelectorAll("a").forEach((link) => {
+  link.addEventListener("click", () => {
+    closeMobileNav();
+  });
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeMobileNav();
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 920) closeMobileNav();
+});
+
 document.querySelector("#brand-home")?.addEventListener("click", (event) => {
   event.preventDefault();
+  closeMobileNav();
   goLanding(false);
 });
 

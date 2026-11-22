@@ -159,6 +159,68 @@ input {
   background: var(--mark-solid);
 }
 
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--rule);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.nav-toggle:hover {
+  border-color: var(--ink);
+}
+
+.nav-toggle-bars,
+.nav-toggle-bars::before,
+.nav-toggle-bars::after {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ink);
+}
+
+.nav-toggle-bars {
+  position: relative;
+}
+
+.nav-toggle-bars::before,
+.nav-toggle-bars::after {
+  content: "";
+  position: absolute;
+  left: 0;
+}
+
+.nav-toggle-bars::before {
+  top: -6px;
+}
+
+.nav-toggle-bars::after {
+  top: 6px;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bars {
+  background: transparent;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bars::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bars::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
+
 .header-nav {
   display: flex;
   gap: 28px;
@@ -996,8 +1058,52 @@ input {
 
 /* Responsive */
 @media (max-width: 920px) {
+  .site-header {
+    position: relative;
+    height: auto;
+    min-height: 76px;
+  }
+
+  .header-inner {
+    position: relative;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 76px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    row-gap: 0;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
   .header-nav {
     display: none;
+    flex-direction: column;
+    gap: 0;
+    flex: 1 0 100%;
+    width: 100%;
+    margin-top: 14px;
+    padding-top: 8px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .header-nav.is-open {
+    display: flex;
+  }
+
+  .header-nav a {
+    display: block;
+    padding: 14px 2px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 16px;
+    color: var(--ink);
+  }
+
+  .header-nav a:last-child {
+    border-bottom: 0;
   }
 
   .hero,
