@@ -220,20 +220,25 @@ function renderResults(report: Report): void {
   const improve = report.recommendations.filter(
     (r) => r.severity === "can-improve",
   ).length;
-  const weakest = [...report.areas].sort((a, b) => {
-    const ap = a.max ? a.score / a.max : 0;
-    const bp = b.max ? b.score / b.max : 0;
-    return ap - bp;
-  })[0];
-  const weakestPct = weakest
-    ? Math.round((weakest.score / Math.max(weakest.max, 1)) * 100)
-    : 0;
+  const ranked = [...report.areas]
+    .map((a) => ({
+      ...a,
+      pct: a.max === 0 ? 0 : Math.round((a.score / a.max) * 100),
+    }))
+    .sort((a, b) => a.pct - b.pct);
+  const lowest = ranked[0];
+  const hasRealWeakSpot =
+    Boolean(lowest) && (lowest!.pct < 85 || needFix > 0);
+
+  const thirdCount = hasRealWeakSpot
+    ? `<div class="score-count"><strong>${lowest!.pct}%</strong><span>Weakest: ${lowest!.name}</span></div>`
+    : `<div class="score-count"><strong>${Math.min(...ranked.map((a) => a.pct)) || 100}%</strong><span>Lowest area still strong</span></div>`;
 
   if (counts) {
     counts.innerHTML = `
       <div class="score-count"><strong>${needFix}</strong><span>Need fixing</span></div>
       <div class="score-count"><strong>${improve}</strong><span>Can improve</span></div>
-      <div class="score-count"><strong>${weakestPct}%</strong><span>Weakest: ${weakest?.name ?? "n/a"}</span></div>
+      ${thirdCount}
     `;
   }
 

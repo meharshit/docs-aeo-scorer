@@ -121,9 +121,13 @@ export function normalizeDocsUrl(raw: string): string | null {
   }
 }
 
+/** Only call something a weak spot when it is actually weak, not just the lowest of four strong areas. */
+const WEAK_AREA_PCT = 85;
+
 function buildSummary(
   areas: AreaResult[],
   recommendations: Recommendation[],
+  overallScore: number,
 ): Report["summary"] {
   const withPct = areas.map((a) => ({
     ...a,
@@ -136,12 +140,8 @@ function buildSummary(
     actionability: "finish tasks",
     trust: "tell what is current",
   };
-  const phrase = weakest ? phrases[weakest.id] : "use your docs";
-  const areaName = weakest?.name ?? "your docs";
-  const titles = recommendations
-    .filter((r) => r.severity === "needs-fix")
-    .slice(0, 3)
-    .map((r) => r.title.toLowerCase());
+  const needsFix = recommendations.filter((r) => r.severity === "needs-fix");
+  const titles = needsFix.slice(0, 3).map((r) => r.title.toLowerCase());
 
   let body: string;
   if (titles.length === 0) {
@@ -155,9 +155,39 @@ function buildSummary(
     body = `Fix ${titles[0]}, ${titles[1]} and ${titles[2]} first, then re-check after your next docs release.`;
   }
 
+  const hasRealWeakSpot =
+    Boolean(weakest) &&
+    (weakest!.pct < WEAK_AREA_PCT || needsFix.length > 0);
+
+  // Perfect / near-perfect: never claim agents "struggle" just because one area
+  // ties for lowest among four full scores.
+  if (overallScore >= 90 && !hasRealWeakSpot) {
+    return {
+      headline: "Strong agent readiness across the board. Keep",
+      highlight: "shipping improvements",
+      body,
+    };
+  }
+
+  if (overallScore >= 70 && !hasRealWeakSpot) {
+    return {
+      headline: "Solid AEO foundation. Agents can already",
+      highlight: "find and use your docs",
+      body,
+    };
+  }
+
+  if (!hasRealWeakSpot || !weakest) {
+    return {
+      headline: "Your docs are in decent shape. Keep watching",
+      highlight: "what agents need next",
+      body,
+    };
+  }
+
   return {
-    headline: `Your weakest area is ${areaName}. Agents struggle to`,
-    highlight: phrase,
+    headline: `Your weakest area is ${weakest.name}. Agents struggle to`,
+    highlight: phrases[weakest.id],
     body,
   };
 }
@@ -227,7 +257,7 @@ export function toReport(backend: ScoreReport): Report {
     grade: backend.grade,
     areas,
     recommendations,
-    summary: buildSummary(areas, recommendations),
+    summary: buildSummary(areas, recommendations, backend.score),
   };
 }
 
