@@ -7,6 +7,17 @@ import {
   type Report,
   type ScoreReport,
 } from "./adapter.js";
+import {
+  buildPager,
+  clearRemovalToken,
+  formatHistoryDate,
+  getRemovalToken,
+  relativeTime as publicRelativeTime,
+  renderHistoryChart,
+  renderLandingTopRows,
+  renderScoresListRows,
+  saveRemovalToken,
+} from "./public-scores-ui.js";
 
 const CHECKS = [
   {
@@ -35,21 +46,98 @@ const CHECKS = [
   },
 ] as const;
 
-type View = "landing" | "checking" | "results";
+type View = "landing" | "checking" | "results" | "scores";
+
+type PublicMeta = {
+  listed: boolean;
+  slug?: string;
+  rank?: number;
+  total?: number;
+  removalToken?: string;
+  siteKey?: string;
+};
 
 const landing = document.querySelector<HTMLElement>("#view-landing");
 const checking = document.querySelector<HTMLElement>("#view-checking");
 const results = document.querySelector<HTMLElement>("#view-results");
+const scoresView = document.querySelector<HTMLElement>("#view-scores");
 const progressLine = document.querySelector<HTMLElement>("#progress-line");
 const progressFill = document.querySelector<HTMLElement>("#progress-line-fill");
 const form = document.querySelector<HTMLFormElement>("#score-form");
 const urlInput = document.querySelector<HTMLInputElement>("#docs-url");
+const makePublic = document.querySelector<HTMLInputElement>("#make-public");
 const formError = document.querySelector<HTMLElement>("#form-error");
 const toastEl = document.querySelector<HTMLElement>("#toast");
+const publicBar = document.querySelector<HTMLElement>("#public-bar");
+const historyWrap = document.querySelector<HTMLElement>("#history-wrap");
+const historyLead = document.querySelector<HTMLElement>("#history-lead");
+const historyList = document.querySelector<HTMLElement>("#history-list");
+const publicLandingTop = document.querySelector<HTMLElement>("#public-landing-top");
+const publicLandingEmpty = document.querySelector<HTMLElement>("#public-landing-empty");
+const scoresList = document.querySelector<HTMLElement>("#scores-list");
+const scoresEmpty = document.querySelector<HTMLElement>("#scores-empty");
+const scoresListHead = document.querySelector<HTMLElement>("#scores-list-head");
+const scoresFoot = document.querySelector<HTMLElement>("#scores-foot");
+const scoresPageLabel = document.querySelector<HTMLElement>("#scores-page-label");
+const scoresPager = document.querySelector<HTMLElement>("#scores-pager");
+const scoresSearch = document.querySelector<HTMLInputElement>("#scores-search");
+const scoresStats = document.querySelector<HTMLElement>("#scores-stats");
+const scoresLive = document.querySelector<HTMLElement>("#scores-live");
+const statSites = document.querySelector<HTMLElement>("#stat-sites");
+const statAverage = document.querySelector<HTMLElement>("#stat-average");
+const statTop = document.querySelector<HTMLElement>("#stat-top");
+const statStrong = document.querySelector<HTMLElement>("#stat-strong");
 
 let currentUrl = "";
 let currentReport: Report | null = null;
+let currentPublic: PublicMeta | null = null;
 let toastTimer = 0;
+let scoresSort = "top";
+let scoresGrade = "all";
+let scoresPage = 1;
+let scoresQuery = "";
+let scoresSearchTimer = 0;
+let landingTopLoaded = false;
+
+function scoresQueryString(): string {
+  const params = new URLSearchParams();
+  if (scoresSort !== "top") params.set("sort", scoresSort);
+  if (scoresGrade !== "all") params.set("grade", scoresGrade);
+  if (scoresQuery) params.set("q", scoresQuery);
+  if (scoresPage > 1) params.set("page", String(scoresPage));
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+function syncScoresUrl(push: boolean): void {
+  const url = `/scores${scoresQueryString()}`;
+  if (push) history.pushState({ view: "scores" }, "", url);
+  else history.replaceState({ view: "scores" }, "", url);
+}
+
+function setSegmentPressed(
+  root: ParentNode | null,
+  attr: string,
+  value: string,
+): void {
+  if (!root) return;
+  root.querySelectorAll<HTMLButtonElement>("button").forEach((btn) => {
+    const match = btn.getAttribute(attr) === value;
+    btn.setAttribute("aria-pressed", match ? "true" : "false");
+  });
+}
+
+function applyScoresControlsFromState(): void {
+  setSegmentPressed(document.querySelector("#scores-sort"), "data-sort", scoresSort);
+  setSegmentPressed(
+    document.querySelector("#scores-grade"),
+    "data-grade",
+    scoresGrade,
+  );
+  if (scoresSearch && scoresSearch.value !== scoresQuery) {
+    scoresSearch.value = scoresQuery;
+  }
+}
 
 function scrollTop(): void {
   window.scrollTo({ top: 0, behavior: "auto" });
@@ -119,19 +207,14 @@ function showView(view: View): void {
   if (landing) landing.hidden = view !== "landing";
   if (checking) checking.hidden = view !== "checking";
   if (results) results.hidden = view !== "results";
+  if (scoresView) scoresView.hidden = view !== "scores";
   if (progressLine) progressLine.hidden = view !== "checking";
   scrollTop();
+  if (view === "landing") void loadLandingTop();
 }
 
 function relativeTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "just now";
-  const sec = Math.max(0, Math.round((Date.now() - then) / 1000));
-  if (sec < 60) return "just now";
-  const min = Math.round(sec / 60);
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.round(min / 60);
-  return `${hr}h ago`;
+  return publicRelativeTime(iso);
 }
 
 function setCheckingProgress(percent: number): void {
@@ -183,8 +266,150 @@ function renderCheckLog(
   }).join("");
 }
 
-function renderResults(report: Report): void {
+async function loadLandingTop(): Promise<void> {
+  if (!publicLandingTop) return;
+  try {
+    const response = await fetch("/api/public-scores/top?limit=5");
+    if (!response.ok) throw new Error("top failed");
+    const data = (await response.json()) as { rows: Parameters<typeof renderLandingTopRows>[0] };
+    landingTopLoaded = true;
+    if (!data.rows || data.rows.length === 0) {
+      publicLandingTop.innerHTML = "";
+      if (publicLandingEmpty) publicLandingEmpty.hidden = false;
+      return;
+    }
+    if (publicLandingEmpty) publicLandingEmpty.hidden = true;
+    publicLandingTop.innerHTML = renderLandingTopRows(data.rows);
+  } catch {
+    if (!landingTopLoaded) {
+      publicLandingTop.innerHTML = "";
+      if (publicLandingEmpty) publicLandingEmpty.hidden = false;
+    }
+  }
+}
+
+function renderPublicBar(meta: PublicMeta | null): void {
+  if (!publicBar) return;
+  if (!meta?.listed || !meta.slug) {
+    publicBar.hidden = true;
+    publicBar.innerHTML = "";
+    return;
+  }
+
+  const token = meta.removalToken || getRemovalToken(meta.slug);
+  const rank = meta.rank ?? "—";
+  const total = meta.total ?? "—";
+  const site = meta.siteKey || meta.slug;
+
+  publicBar.hidden = false;
+  publicBar.innerHTML = `
+    <span class="public-bar-dot" aria-hidden="true"></span>
+    <span>Listed publicly as <span class="mono">${site}</span></span>
+    <span>Rank <b>${rank}</b> of <b>${total}</b></span>
+    <span class="public-bar-spacer"></span>
+    <a class="text-link" href="/r/${meta.slug}">Public link</a>
+    <a class="text-link" href="/scores">All scores</a>
+    ${
+      token
+        ? `<button type="button" class="text-link muted-link" id="public-remove-btn">Remove from public</button>`
+        : ""
+    }
+  `;
+
+  document.querySelector("#public-remove-btn")?.addEventListener("click", () => {
+    void removeFromPublic(meta.slug!, token!);
+  });
+}
+
+async function removeFromPublic(slug: string, token: string): Promise<void> {
+  try {
+    const response = await fetch(
+      `/api/public-scores/${encodeURIComponent(slug)}/remove`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ removalToken: token }),
+      },
+    );
+    if (!response.ok) {
+      showToast("Could not remove this score");
+      return;
+    }
+    clearRemovalToken(slug);
+    currentPublic = { listed: false };
+    renderPublicBar(null);
+    showToast("Removed from public scores");
+    landingTopLoaded = false;
+    void loadLandingTop();
+  } catch {
+    showToast("Could not remove this score");
+  }
+}
+
+async function loadHistory(slug: string): Promise<void> {
+  if (!historyWrap || !historyList) return;
+  try {
+    const response = await fetch(
+      `/api/public-scores/${encodeURIComponent(slug)}/history`,
+    );
+    if (!response.ok) throw new Error("history failed");
+    const data = (await response.json()) as {
+      points: { score: number; checkedAt: string; change?: number | null }[];
+    };
+    const points = data.points ?? [];
+    if (points.length === 0) {
+      historyWrap.hidden = true;
+      return;
+    }
+
+    historyWrap.hidden = false;
+    if (historyLead) {
+      historyLead.textContent =
+        points.length === 1
+          ? "First public score for this site."
+          : `${points.length} public checks on record.`;
+    }
+
+    if (points.length === 1) {
+      const only = points[0]!;
+      historyList.innerHTML = `
+        <p class="score-history-first">
+          <strong>${only.score}</strong> · ${formatHistoryDate(only.checkedAt, null)}
+        </p>
+      `;
+      return;
+    }
+
+    const recent = points.slice(-4).reverse();
+    const withChange = recent.map((p, i, arr) => {
+      const older = arr[i + 1];
+      const change =
+        older == null ? null : Number((p.score - older.score).toFixed(1));
+      return { ...p, change };
+    });
+
+    historyList.innerHTML = `
+      ${renderHistoryChart(points)}
+      <div class="score-history-points">
+        ${withChange
+          .map(
+            (p) => `
+          <div class="score-history-point">
+            <strong>${p.score}</strong>
+            <span>${formatHistoryDate(p.checkedAt, p.change)}</span>
+          </div>`,
+          )
+          .join("")}
+      </div>
+    `;
+  } catch {
+    historyWrap.hidden = true;
+  }
+}
+
+function renderResults(report: Report, publicMeta: PublicMeta | null = null): void {
   currentReport = report;
+  currentPublic = publicMeta;
   const host = displayHost(report.url);
 
   const reportUrl = document.querySelector("#report-url");
@@ -243,6 +468,12 @@ function renderResults(report: Report): void {
   }
 
   renderRuler(document.querySelector("#results-ruler"), report.score);
+  renderPublicBar(publicMeta);
+  if (publicMeta?.listed && publicMeta.slug) {
+    void loadHistory(publicMeta.slug);
+  } else if (historyWrap) {
+    historyWrap.hidden = true;
+  }
 
   if (areas) {
     areas.innerHTML = report.areas
@@ -332,12 +563,45 @@ function renderResults(report: Report): void {
   }
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+type CheckRowState = {
+  state: LogState;
+  seconds?: number;
+  error?: string;
+};
+
+function paintPendingChecks(
+  states: CheckRowState[],
+  activeIndex: number,
+  elapsedSec: number,
+): void {
+  const per = Math.max(1, Math.round(elapsedSec / Math.max(activeIndex, 1)));
+  states.forEach((row, i) => {
+    row.error = undefined;
+    if (i < activeIndex) {
+      row.state = "done";
+      row.seconds = per + (i % 2);
+    } else if (i === activeIndex) {
+      row.state = "running";
+      row.seconds = undefined;
+    } else {
+      row.state = "waiting";
+      row.seconds = undefined;
+    }
+  });
+  renderCheckLog(states);
+}
+
 async function runScore(url: string): Promise<void> {
   currentUrl = url;
   const host = displayHost(url);
   const checkingUrl = document.querySelector("#checking-url");
   const checkingError = document.querySelector<HTMLElement>("#checking-error");
   const tryAgain = document.querySelector<HTMLButtonElement>("#try-again");
+  const wantPublic = makePublic?.checked !== false;
 
   if (checkingUrl) checkingUrl.textContent = host;
   if (checkingError) {
@@ -346,29 +610,45 @@ async function runScore(url: string): Promise<void> {
   }
   if (tryAgain) tryAgain.hidden = true;
 
-  const states = CHECKS.map(() => ({ state: "waiting" as LogState }));
-  states[0]!.state = "running";
-  renderCheckLog(states);
+  const states: CheckRowState[] = CHECKS.map(() => ({ state: "waiting" }));
+  let activeIndex = 0;
+  paintPendingChecks(states, activeIndex, 1);
   setCheckingProgress(4);
   showView("checking");
-  history.pushState({ view: "checking", url }, "", `/?view=check&url=${encodeURIComponent(url)}`);
+  history.pushState(
+    { view: "checking", url },
+    "",
+    `/?view=check&url=${encodeURIComponent(url)}`,
+  );
 
   const started = Date.now();
+  const stepMs = 850;
   let pulse = window.setInterval(() => {
     const elapsed = Date.now() - started;
-    const soft = Math.min(88, 4 + elapsed / 120);
+    activeIndex = Math.min(
+      CHECKS.length - 1,
+      Math.floor(elapsed / stepMs),
+    );
+    paintPendingChecks(states, activeIndex, Math.max(1, Math.round(elapsed / 1000)));
+    const soft = Math.min(
+      90,
+      6 +
+        (activeIndex / Math.max(CHECKS.length - 1, 1)) * 72 +
+        (elapsed % stepMs) / 40,
+    );
     setCheckingProgress(soft);
-  }, 200);
+  }, 180);
 
   try {
     const response = await fetch("/api/score", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, public: wantPublic }),
     });
     const payload = (await response.json()) as ScoreReport & {
       error?: string;
       retryAfterSec?: number;
+      public?: PublicMeta;
     };
 
     window.clearInterval(pulse);
@@ -383,12 +663,8 @@ async function runScore(url: string): Promise<void> {
             }`
           : payload.error || `HTTP ${response.status}`;
       states.forEach((s, i) => {
-        if (i === 0) {
-          s.state = "failed";
-          (s as { error?: string }).error = msg;
-        } else {
-          s.state = "waiting";
-        }
+        s.state = i === activeIndex ? "failed" : "waiting";
+        s.error = i === activeIndex ? msg : undefined;
       });
       renderCheckLog(states);
       setCheckingProgress(0);
@@ -402,17 +678,34 @@ async function runScore(url: string): Promise<void> {
 
     const totalSec = Math.max(1, Math.round((Date.now() - started) / 1000));
     const per = Math.max(1, Math.round(totalSec / CHECKS.length));
-    states.forEach((s, i) => {
-      s.state = "done";
-      (s as { seconds?: number }).seconds = per + (i % 2);
-    });
-    renderCheckLog(states);
-    setCheckingProgress(100);
+
+    for (let i = 0; i < CHECKS.length; i += 1) {
+      if (states[i]!.state === "done") {
+        states[i]!.seconds = per + (i % 2);
+        continue;
+      }
+      states[i]!.state = "running";
+      renderCheckLog(states);
+      setCheckingProgress(Math.round(((i + 0.45) / CHECKS.length) * 100));
+      await sleep(220);
+      states[i]!.state = "done";
+      states[i]!.seconds = per + (i % 2);
+      renderCheckLog(states);
+      setCheckingProgress(Math.round(((i + 1) / CHECKS.length) * 100));
+    }
+
+    await sleep(280);
 
     const report = toReport(payload);
+    const publicMeta = payload.public ?? { listed: false };
+    if (publicMeta.listed && publicMeta.slug && publicMeta.removalToken) {
+      saveRemovalToken(publicMeta.slug, publicMeta.removalToken);
+    }
     sessionStorage.setItem("aeo-last-report", JSON.stringify(report));
-    renderResults(report);
+    sessionStorage.setItem("aeo-last-public", JSON.stringify(publicMeta));
+    renderResults(report, publicMeta);
     showView("results");
+    landingTopLoaded = false;
     history.replaceState(
       { view: "results", url },
       "",
@@ -421,9 +714,10 @@ async function runScore(url: string): Promise<void> {
   } catch (error) {
     window.clearInterval(pulse);
     const msg = error instanceof Error ? error.message : "Score failed";
-    states[0]!.state = "failed";
-    (states[0] as { error?: string }).error = msg;
-    for (let i = 1; i < states.length; i += 1) states[i]!.state = "waiting";
+    states.forEach((s, i) => {
+      s.state = i === activeIndex ? "failed" : "waiting";
+      s.error = i === activeIndex ? msg : undefined;
+    });
     renderCheckLog(states);
     setCheckingProgress(0);
     if (checkingError) {
@@ -434,14 +728,183 @@ async function runScore(url: string): Promise<void> {
   }
 }
 
-function goLanding(clear = false): void {
+async function loadScoresPage(pushUrl = false): Promise<void> {
+  if (!scoresList) return;
+  applyScoresControlsFromState();
+  syncScoresUrl(pushUrl);
+
+  const params = new URLSearchParams({
+    sort: scoresSort,
+    grade: scoresGrade,
+    page: String(scoresPage),
+  });
+  if (scoresQuery) params.set("q", scoresQuery);
+
+  try {
+    const response = await fetch(`/api/public-scores?${params.toString()}`);
+    if (!response.ok) throw new Error("list failed");
+    const data = (await response.json()) as {
+      total: number;
+      page: number;
+      pages: number;
+      perPage: number;
+      stats: {
+        sites: number;
+        average: number;
+        top: number;
+        strongCount: number;
+      };
+      rows: Parameters<typeof renderScoresListRows>[0];
+    };
+
+    if (scoresStats) scoresStats.hidden = false;
+    if (statSites) statSites.textContent = String(data.stats.sites);
+    if (statAverage) statAverage.textContent = String(data.stats.average);
+    if (statTop) statTop.textContent = String(data.stats.top);
+    if (statStrong) statStrong.textContent = String(data.stats.strongCount);
+
+    if (data.stats.sites === 0 && !scoresQuery && scoresGrade === "all") {
+      scoresList.innerHTML = "";
+      if (scoresEmpty) {
+        scoresEmpty.hidden = false;
+        scoresEmpty.innerHTML =
+          'No public scores yet. Be the first — <a href="/">score your docs</a>.';
+      }
+      if (scoresListHead) scoresListHead.hidden = true;
+      if (scoresFoot) scoresFoot.hidden = true;
+      if (scoresLive) scoresLive.textContent = "0 sites";
+      return;
+    }
+
+    if (data.total === 0) {
+      scoresList.innerHTML = renderScoresListRows([]);
+      if (scoresEmpty) scoresEmpty.hidden = true;
+      if (scoresListHead) scoresListHead.hidden = false;
+      if (scoresFoot) scoresFoot.hidden = true;
+      if (scoresLive) scoresLive.textContent = "0 matching sites";
+      return;
+    }
+
+    if (scoresEmpty) scoresEmpty.hidden = true;
+    if (scoresListHead) scoresListHead.hidden = false;
+    scoresList.innerHTML = renderScoresListRows(data.rows);
+
+    const from = (data.page - 1) * data.perPage + 1;
+    const to = Math.min(data.total, data.page * data.perPage);
+    if (scoresLive) {
+      scoresLive.textContent = `Showing ${from}–${to} of ${data.total} sites`;
+    }
+
+    if (scoresFoot && scoresPager && scoresPageLabel) {
+      scoresFoot.hidden = false;
+      scoresPageLabel.textContent = `Showing ${from}–${to} of ${data.total} sites`;
+      const items = buildPager(data.page, data.pages);
+      scoresPager.innerHTML = items
+        .map((item) => {
+          const attrs = [
+            `type="button"`,
+            `data-page="${item.page}"`,
+            item.current ? `aria-current="page"` : "",
+            item.disabled ? "disabled" : "",
+            item.nav ? `class="nav"` : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          return `<button ${attrs}>${item.label}</button>`;
+        })
+        .join("");
+      scoresPager
+        .querySelectorAll<HTMLButtonElement>("button[data-page]")
+        .forEach((btn) => {
+          btn.addEventListener("click", () => {
+            if (btn.disabled) return;
+            scoresPage = Number(btn.dataset.page || "1");
+            void loadScoresPage(true);
+          });
+        });
+    }
+  } catch {
+    scoresList.innerHTML = `<li class="scores-empty">Could not load public scores. Try again shortly.</li>`;
+    if (scoresEmpty) scoresEmpty.hidden = true;
+    if (scoresFoot) scoresFoot.hidden = true;
+  }
+}
+
+function readScoresStateFromUrl(): void {
+  const params = new URLSearchParams(window.location.search);
+  const sort = params.get("sort") || "top";
+  scoresSort = ["top", "recent", "improved"].includes(sort) ? sort : "top";
+  const grade = params.get("grade") || "all";
+  scoresGrade = ["all", "strong", "mid", "low"].includes(grade)
+    ? grade
+    : "all";
+  scoresQuery = (params.get("q") || "").trim();
+  const page = Number(params.get("page") || "1");
+  scoresPage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+}
+
+function goScores(push = true): void {
+  if (push && window.location.pathname.replace(/\/+$/, "") !== "/scores") {
+    scoresSort = "top";
+    scoresGrade = "all";
+    scoresPage = 1;
+    scoresQuery = "";
+  } else {
+    readScoresStateFromUrl();
+  }
+  showView("scores");
+  void loadScoresPage(push);
+}
+
+function goLanding(clear = false, push = true): void {
   showView("landing");
-  history.pushState({ view: "landing" }, "", "/");
+  if (push) history.pushState({ view: "landing" }, "", "/");
   if (clear && urlInput) {
     urlInput.value = "";
     urlInput.focus();
   }
   setFormError(null);
+}
+
+async function openPublicReport(slug: string, push = true): Promise<void> {
+  showView("checking");
+  setCheckingProgress(12);
+  renderCheckLog(CHECKS.map(() => ({ state: "waiting" as const })));
+  const checkingUrl = document.querySelector("#checking-url");
+  if (checkingUrl) checkingUrl.textContent = slug;
+
+  try {
+    const response = await fetch(
+      `/api/public-scores/${encodeURIComponent(slug)}`,
+    );
+    if (!response.ok) throw new Error("Report not found");
+    const data = (await response.json()) as {
+      url: string;
+      slug: string;
+      siteKey: string;
+      rank: number;
+      total: number;
+      report: ScoreReport;
+    };
+    const report = toReport(data.report);
+    currentUrl = report.url;
+    const publicMeta: PublicMeta = {
+      listed: true,
+      slug: data.slug,
+      rank: data.rank,
+      total: data.total,
+      siteKey: data.siteKey,
+      removalToken: getRemovalToken(data.slug) || undefined,
+    };
+    renderResults(report, publicMeta);
+    showView("results");
+    if (push) {
+      history.pushState({ view: "results", slug }, "", `/r/${data.slug}`);
+    }
+  } catch {
+    showToast("Public report not found");
+    goScores(push);
+  }
 }
 
 form?.addEventListener("submit", (event) => {
@@ -466,7 +929,8 @@ document.querySelectorAll<HTMLButtonElement>(".hint-link").forEach((btn) => {
   });
 });
 
-document.querySelector("#brand-home")?.addEventListener("click", () => {
+document.querySelector("#brand-home")?.addEventListener("click", (event) => {
+  event.preventDefault();
   goLanding(false);
 });
 
@@ -495,9 +959,9 @@ document.querySelector("#nav-learn")?.addEventListener("click", (event) => {
   }
 });
 
-document.querySelector("#nav-wotw")?.addEventListener("click", (event) => {
+document.querySelector("#nav-scores")?.addEventListener("click", (event) => {
   event.preventDefault();
-  showToast("World of Technical Writing link coming soon");
+  goScores(true);
 });
 
 document.querySelector("#try-again")?.addEventListener("click", () => {
@@ -523,14 +987,89 @@ document.querySelector("#copy-md")?.addEventListener("click", async () => {
 });
 
 document.querySelector("#share-btn")?.addEventListener("click", async () => {
+  if (currentPublic?.listed && currentPublic.slug) {
+    const share = `${window.location.origin}/r/${currentPublic.slug}`;
+    await navigator.clipboard.writeText(share);
+    showToast("Public report link copied");
+    return;
+  }
   if (!currentUrl) return;
   const share = `${window.location.origin}/?url=${encodeURIComponent(currentUrl)}`;
   await navigator.clipboard.writeText(share);
   showToast("Share link copied");
 });
 
-window.addEventListener("popstate", () => {
+document
+  .querySelectorAll<HTMLButtonElement>("#scores-sort button")
+  .forEach((btn) => {
+    btn.addEventListener("click", () => {
+      scoresSort = btn.dataset.sort || "top";
+      scoresPage = 1;
+      void loadScoresPage(true);
+    });
+  });
+
+document
+  .querySelectorAll<HTMLButtonElement>("#scores-grade button")
+  .forEach((btn) => {
+    btn.addEventListener("click", () => {
+      scoresGrade = btn.dataset.grade || "all";
+      scoresPage = 1;
+      void loadScoresPage(true);
+    });
+  });
+
+scoresSearch?.addEventListener("input", () => {
+  window.clearTimeout(scoresSearchTimer);
+  scoresSearchTimer = window.setTimeout(() => {
+    scoresQuery = scoresSearch.value.trim();
+    scoresPage = 1;
+    void loadScoresPage(true);
+  }, 250);
+});
+
+document.addEventListener("click", (event) => {
+  const target = event.target as HTMLElement | null;
+  const link = target?.closest?.("a[href^='/scores'], a[href^='/r/']");
+  if (!link) return;
+  const href = link.getAttribute("href");
+  if (!href) return;
+  if (href === "/scores" || href.startsWith("/scores?")) {
+    event.preventDefault();
+    if (href.startsWith("/scores?")) {
+      history.pushState({ view: "scores" }, "", href);
+      readScoresStateFromUrl();
+      showView("scores");
+      void loadScoresPage(false);
+      return;
+    }
+    goScores(true);
+    return;
+  }
+  const match = href.match(/^\/r\/([^/?#]+)/);
+  if (match) {
+    event.preventDefault();
+    void openPublicReport(decodeURIComponent(match[1]!));
+  }
+});
+
+function routeFromLocation(push = false): void {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
   const params = new URLSearchParams(window.location.search);
+
+  if (path === "/scores") {
+    readScoresStateFromUrl();
+    showView("scores");
+    void loadScoresPage(false);
+    return;
+  }
+
+  const reportMatch = path.match(/^\/r\/([^/]+)$/);
+  if (reportMatch) {
+    void openPublicReport(decodeURIComponent(reportMatch[1]!), push);
+    return;
+  }
+
   const view = params.get("view");
   if (view === "report" && currentReport) {
     showView("results");
@@ -540,17 +1079,23 @@ window.addEventListener("popstate", () => {
     showView("checking");
     return;
   }
-  showView("landing");
+
+  const bootUrl = params.get("url");
+  if (bootUrl) {
+    const normalized = normalizeDocsUrl(bootUrl);
+    if (normalized) {
+      if (urlInput) urlInput.value = normalized;
+      void runScore(normalized);
+      return;
+    }
+  }
+
+  goLanding(false, push);
+}
+
+window.addEventListener("popstate", () => {
+  routeFromLocation(false);
 });
 
 renderRuler(document.querySelector("#landing-ruler"), null);
-
-const bootParams = new URLSearchParams(window.location.search);
-const bootUrl = bootParams.get("url");
-if (bootUrl) {
-  const normalized = normalizeDocsUrl(bootUrl);
-  if (normalized) {
-    if (urlInput) urlInput.value = normalized;
-    void runScore(normalized);
-  }
-}
+routeFromLocation(false);

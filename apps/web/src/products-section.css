@@ -29,6 +29,7 @@
 }
 
 .product-sheet {
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--sheet);
@@ -45,6 +46,26 @@
   box-shadow:
     0 1px 0 var(--ink),
     0 22px 44px -26px rgba(23, 38, 30, 0.35);
+}
+
+.product-recommended {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--mark-solid);
+  color: var(--ink);
+  font: 650 11px / 1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-feature-settings: "tnum";
+}
+
+.product-sheet-featured .product-cover-bar {
+  display: none;
 }
 
 .product-cover {
@@ -139,10 +160,32 @@
 
 .product-buy {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
   margin-top: auto;
+  padding-top: 18px;
+}
+
+.product-price {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  font-feature-settings: "tnum";
+}
+
+.product-price-was {
+  font: 500 14px / 1 var(--mono);
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+
+.product-price-now {
+  font: 650 22px / 1 var(--display);
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  font-optical-sizing: auto;
 }
 
 .product-buy .gumroad-button {

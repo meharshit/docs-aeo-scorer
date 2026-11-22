@@ -16,6 +16,7 @@
     />
     <link rel="stylesheet" href="/src/styles.css" />
     <link rel="stylesheet" href="/src/products-section.css" />
+    <link rel="stylesheet" href="/src/public-scores.css" />
   </head>
   <body>
     <header class="site-header">
@@ -25,12 +26,14 @@
           <span>Docs AEO Scorer</span>
         </button>
         <nav class="header-nav" aria-label="Primary">
+          <a href="/scores" id="nav-scores">Public scores</a>
           <a href="#method" id="nav-method">Method</a>
           <a href="#learn" id="nav-learn">Learn</a>
           <a
-            href="#"
+            href="https://tech-writing.hashnode.dev/"
             id="nav-wotw"
-            title="URL coming soon"
+            target="_blank"
+            rel="noopener noreferrer"
             >World of Technical Writing ↗</a
           >
         </nav>
@@ -73,6 +76,17 @@
                 </button>
               </div>
               <p id="form-error" class="field-error" hidden></p>
+
+              <label class="public-opt-in" for="make-public">
+                <input id="make-public" type="checkbox" checked />
+                <span class="public-check-box" aria-hidden="true"></span>
+                <span>
+                  <span class="public-opt-copy">Add my result to the public scores</span>
+                  <span class="public-opt-note"
+                    >Uncheck this for private or internal docs.</span
+                  >
+                </span>
+              </label>
             </form>
 
             <p class="hint">
@@ -205,6 +219,24 @@
           </div>
         </section>
 
+        <section id="public" class="container public-section">
+          <div class="public-section-grid">
+            <div class="section-intro">
+              <p class="label">Public scores</p>
+              <h2>How developer docs score for AI agents</h2>
+              <p class="section-lead">
+                A live board of public AEO checks. Compare the latest scores,
+                then open any report.
+              </p>
+              <a class="text-link" href="/scores">View all public scores →</a>
+              <p class="public-empty" id="public-landing-empty" hidden>
+                Be the first to add your docs.
+              </p>
+            </div>
+            <div id="public-landing-top"></div>
+          </div>
+        </section>
+
         <section id="learn" class="container products-section">
           <div class="products-top">
             <div class="section-intro">
@@ -249,13 +281,16 @@
                 </li>
               </ul>
               <div class="product-buy">
+                <p class="product-price">
+                  <span class="product-price-was">₹1,599</span>
+                  <span class="product-price-now">₹959</span>
+                </p>
                 <a
                   class="gumroad-button"
                   href="https://satyaseel.gumroad.com/l/ai-native-technical-writing"
                   rel="noopener"
                   >Get the book</a
                 >
-                <p class="product-buy-note">on Gumroad</p>
               </div>
             </article>
 
@@ -292,18 +327,22 @@
                 </li>
               </ul>
               <div class="product-buy">
+                <p class="product-price">
+                  <span class="product-price-was">₹3,099</span>
+                  <span class="product-price-now">₹2,599</span>
+                </p>
                 <a
                   class="gumroad-button"
                   href="https://satyaseel.gumroad.com/l/tlapqh"
                   rel="noopener"
                   >Get the course</a
                 >
-                <p class="product-buy-note">on Gumroad</p>
               </div>
             </article>
 
             <article class="product-sheet product-sheet-featured">
               <div class="product-cover" aria-hidden="true">
+                <p class="product-recommended">Recommended</p>
                 <p class="product-cover-kicker">Bundle · 6 in 1</p>
                 <span class="product-cover-bar"></span>
                 <p class="product-cover-title">
@@ -331,13 +370,16 @@
                 </li>
               </ul>
               <div class="product-buy">
+                <p class="product-price">
+                  <span class="product-price-was">₹5,574</span>
+                  <span class="product-price-now">₹3,099</span>
+                </p>
                 <a
                   class="gumroad-button"
                   href="https://satyaseel.gumroad.com/l/lugozs"
                   rel="noopener"
                   >Get the bundle</a
                 >
-                <p class="product-buy-note">on Gumroad</p>
               </div>
             </article>
           </div>
@@ -389,6 +431,8 @@
             </div>
           </div>
 
+          <div class="public-bar" id="public-bar" hidden></div>
+
           <div class="score-block">
             <div class="score-left">
               <div class="score-big-row">
@@ -405,6 +449,15 @@
           </div>
 
           <div id="results-ruler"></div>
+
+          <div class="score-history" id="history-wrap" hidden>
+            <div>
+              <p class="label">Score history</p>
+              <h2 class="history-title">How this site has scored</h2>
+              <p class="score-history-lead" id="history-lead"></p>
+            </div>
+            <div class="score-history-right" id="history-list"></div>
+          </div>
 
           <div class="areas" id="areas"></div>
 
@@ -434,6 +487,140 @@
                 Re-score →
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PUBLIC SCORES PAGE -->
+      <section id="view-scores" class="view" hidden>
+        <div class="container scores-page">
+          <p class="label">Public scores</p>
+          <h1>How developer docs score for AI agents</h1>
+          <p class="scores-lead">
+            Every public check from Docs AEO Scorer, in one place. Each site
+            shows its latest score, and each row opens the full public report.
+          </p>
+
+          <div class="scores-stats" id="scores-stats" hidden>
+            <div class="scores-stat">
+              <strong id="stat-sites">0</strong>
+              <span>Docs sites scored</span>
+            </div>
+            <div class="scores-stat">
+              <strong id="stat-average">0</strong>
+              <span>Average score</span>
+            </div>
+            <div class="scores-stat">
+              <strong id="stat-top">0</strong>
+              <span>Top score</span>
+            </div>
+            <div class="scores-stat">
+              <strong id="stat-strong">0</strong>
+              <span>Graded B or A</span>
+            </div>
+          </div>
+
+          <div class="scores-controls">
+            <div class="scores-search">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="6.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M16.2 16.2 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <input
+                id="scores-search"
+                type="search"
+                placeholder="Search a docs site"
+                aria-label="Search a docs site"
+                autocomplete="off"
+              />
+            </div>
+            <div class="scores-filters">
+              <div>
+                <p class="scores-seg-label">Sort</p>
+                <div
+                  class="scores-seg"
+                  id="scores-sort"
+                  role="group"
+                  aria-label="Sort"
+                >
+                  <button type="button" data-sort="top" aria-pressed="true">
+                    Top score
+                  </button>
+                  <button type="button" data-sort="recent" aria-pressed="false">
+                    Recently checked
+                  </button>
+                  <button
+                    type="button"
+                    data-sort="improved"
+                    aria-pressed="false"
+                  >
+                    Most improved
+                  </button>
+                </div>
+              </div>
+              <div>
+                <p class="scores-seg-label">Grade</p>
+                <div
+                  class="scores-seg"
+                  id="scores-grade"
+                  role="group"
+                  aria-label="Grade"
+                >
+                  <button type="button" data-grade="all" aria-pressed="true">
+                    All
+                  </button>
+                  <button type="button" data-grade="strong" aria-pressed="false">
+                    B to A
+                  </button>
+                  <button type="button" data-grade="mid" aria-pressed="false">
+                    D to C
+                  </button>
+                  <button type="button" data-grade="low" aria-pressed="false">
+                    F
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="scores-legend" id="scores-legend">
+            Areas: D Discoverability · R Readability · A Actionability · T Trust
+            and freshness
+          </p>
+          <p class="scores-live" id="scores-live" aria-live="polite"></p>
+
+          <div class="scores-list-head" id="scores-list-head" hidden>
+            <span>Rank</span>
+            <span>Docs site</span>
+            <span>Areas</span>
+            <span class="right">Score</span>
+            <span class="right">Change</span>
+            <span></span>
+          </div>
+          <ol class="scores-list" id="scores-list" aria-label="Public scores"></ol>
+          <p class="scores-empty" id="scores-empty" hidden>
+            No public scores yet. Be the first —
+            <a href="/">score your docs</a>.
+          </p>
+          <div class="scores-foot" id="scores-foot" hidden>
+            <p id="scores-page-label"></p>
+            <div class="scores-pager" id="scores-pager"></div>
+          </div>
+          <div class="scores-cta">
+            <a class="btn-solid" href="/">Score your docs →</a>
           </div>
         </div>
       </section>

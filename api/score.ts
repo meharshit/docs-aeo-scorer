@@ -1,8 +1,8 @@
-import { scoreDocsUrl } from "@aeo-docs-scorer/scanner";
 import {
   checkRateLimit,
   clientKeyFromHeaders,
 } from "../apps/web/rate-limit.js";
+import { handleScorePost } from "../apps/web/public-api.js";
 
 type ScoreRequest = {
   method?: string;
@@ -15,11 +15,6 @@ type ScoreResponse = {
   status: (code: number) => { json: (body: unknown) => void };
 };
 
-/**
- * Production score API for Vercel (Hobby / free).
- * POST /api/score  { "url": "https://docs.example.com" }
- * Rate limit: 8 / minute and 50 / hour per IP.
- */
 export default async function handler(
   req: ScoreRequest,
   res: ScoreResponse,
@@ -46,23 +41,19 @@ export default async function handler(
   try {
     const body =
       typeof req.body === "string"
-        ? (JSON.parse(req.body || "{}") as { url?: string })
-        : ((req.body ?? {}) as { url?: string });
+        ? (JSON.parse(req.body || "{}") as { url?: string; public?: boolean })
+        : ((req.body ?? {}) as { url?: string; public?: boolean });
 
-    if (!body.url || typeof body.url !== "string") {
-      res.status(400).json({ error: "Missing url" });
-      return;
+    const result = await handleScorePost({
+      url: body.url,
+      public: body.public !== false,
+    });
+    if (result.headers) {
+      for (const [key, value] of Object.entries(result.headers)) {
+        res.setHeader(key, value);
+      }
     }
-
-    try {
-      new URL(body.url);
-    } catch {
-      res.status(400).json({ error: "Invalid url" });
-      return;
-    }
-
-    const report = await scoreDocsUrl(body.url);
-    res.status(200).json(report);
+    res.status(result.status).json(result.body);
   } catch (error) {
     res.status(500).json({
       error: error instanceof Error ? error.message : "Score failed",

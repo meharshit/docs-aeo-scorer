@@ -3,7 +3,7 @@ import { aeoScoreApiPlugin } from "./vite.score-plugin.js";
 
 export default defineConfig({
   root: ".",
-  base: "./",
+  base: "/",
   plugins: [aeoScoreApiPlugin()],
   server: {
     port: 5173,
