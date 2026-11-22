@@ -1,8 +1,8 @@
 import {
   checkRateLimit,
   clientKeyFromHeaders,
-} from "../../apps/web/rate-limit.js";
-import { handlePublicScoresApi } from "../../apps/web/public-api.js";
+} from "../apps/web/rate-limit.js";
+import { handlePublicScoresApi } from "../apps/web/public-api.js";
 
 type ApiRequest = {
   method?: string;
@@ -17,25 +17,34 @@ type ApiResponse = {
   status: (code: number) => { json: (body: unknown) => void };
 };
 
+/**
+ * Single Vercel function for all /api/public-scores* routes.
+ * Nested paths are rewritten here with ?parts=… (see vercel.json).
+ */
 export default async function handler(
   req: ApiRequest,
   res: ApiResponse,
 ): Promise<void> {
   try {
     const method = (req.method || "GET").toUpperCase();
-    const partsRaw = req.query?.parts;
-    const parts = Array.isArray(partsRaw)
-      ? partsRaw
-      : typeof partsRaw === "string"
-        ? [partsRaw]
-        : [];
-    const pathname =
-      parts.length === 0
-        ? "/api/public-scores"
-        : `/api/public-scores/${parts.map(encodeURIComponent).join("/")}`;
-
-    const rawUrl = req.url || pathname;
+    const rawUrl = req.url || "/api/public-scores";
     const parsed = new URL(rawUrl, "http://localhost");
+
+    const partsRaw = req.query?.parts ?? parsed.searchParams.get("parts");
+    const parts =
+      typeof partsRaw === "string"
+        ? partsRaw
+        : Array.isArray(partsRaw)
+          ? partsRaw.join("/")
+          : "";
+
+    const pathname = parts
+      ? `/api/public-scores/${parts
+          .split("/")
+          .filter(Boolean)
+          .map((p) => encodeURIComponent(decodeURIComponent(p)))
+          .join("/")}`
+      : "/api/public-scores";
 
     if (method === "POST") {
       const clientKey = clientKeyFromHeaders(req.headers, "unknown");
@@ -55,10 +64,14 @@ export default async function handler(
         ? (JSON.parse(req.body || "{}") as Record<string, unknown>)
         : ((req.body ?? {}) as Record<string, unknown>);
 
+    // Drop internal routing param so list filters stay clean.
+    const searchParams = new URLSearchParams(parsed.searchParams);
+    searchParams.delete("parts");
+
     const result = await handlePublicScoresApi(
       method,
       pathname,
-      parsed.searchParams,
+      searchParams,
       body,
     );
     if (result.headers) {

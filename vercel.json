@@ -5,17 +5,10 @@
   "rewrites": [
     { "source": "/api/score", "destination": "/api/score" },
     {
-      "source": "/api/public-scores",
-      "destination": "/api/public-scores/index"
-    },
-    {
-      "source": "/api/public-scores/",
-      "destination": "/api/public-scores/index"
-    },
-    {
       "source": "/api/public-scores/:path*",
-      "destination": "/api/public-scores/:path*"
+      "destination": "/api/public-scores?parts=:path*"
     },
+    { "source": "/api/public-scores", "destination": "/api/public-scores" },
     { "source": "/scores", "destination": "/index.html" },
     { "source": "/r/:slug", "destination": "/index.html" }
   ]
