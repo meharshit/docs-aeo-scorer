@@ -50,19 +50,27 @@ export async function handleScorePost(body: {
     removalToken: string;
     siteKey: string;
   } | null = null;
+  let publicError: string | null = null;
 
   if (makePublic) {
-    publicMeta = await savePublicResult({
-      url: report.url,
-      score: report.score,
-      grade: report.grade,
-      checkedAt: report.scoredAt,
-      categories: report.categories.map((c) => ({
-        id: c.id,
-        score: c.score,
-      })),
-      report,
-    });
+    try {
+      publicMeta = await savePublicResult({
+        url: report.url,
+        score: report.score,
+        grade: report.grade,
+        checkedAt: report.scoredAt,
+        categories: report.categories.map((c) => ({
+          id: c.id,
+          score: c.score,
+        })),
+        report,
+      });
+    } catch (error) {
+      // Scoring must still succeed if the public board DB is misconfigured.
+      publicError =
+        error instanceof Error ? error.message : "Public listing failed";
+      publicMeta = null;
+    }
   }
 
   return json(200, {
@@ -76,7 +84,10 @@ export async function handleScorePost(body: {
           removalToken: publicMeta.removalToken,
           siteKey: publicMeta.siteKey,
         }
-      : { listed: false },
+      : {
+          listed: false,
+          ...(publicError ? { error: publicError } : {}),
+        },
   });
 }
 
