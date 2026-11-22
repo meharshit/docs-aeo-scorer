@@ -115,12 +115,14 @@
   border-bottom: 1px solid var(--rule);
 }
 
-.ps-row.top3 {
+.ps-row.top3,
+.scores-list-row.top3 {
   background: var(--sheet);
   box-shadow: inset 3px 0 0 var(--mark-solid);
-  margin: 0 -16px;
-  padding-left: 16px;
-  padding-right: 16px;
+  margin: 0;
+  padding-left: 14px;
+  padding-right: 14px;
+  border-radius: 4px;
 }
 
 .ps-rank {
@@ -226,9 +228,18 @@
   font-feature-settings: "tnum";
 }
 
+/* "Your report" is shown in meta text only — do not tint whole rows
+   (that made every site you scored look like a special top row). */
 .ps-row.yours {
-  background: rgba(227, 199, 122, 0.18);
-  margin: 0 -14px;
+  background: transparent;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.ps-row.yours.top3,
+.scores-list-row.yours.top3 {
+  background: var(--sheet);
   padding-left: 14px;
   padding-right: 14px;
 }
@@ -767,13 +778,10 @@
     gap: 12px;
   }
 
-  .scores-list-row.yours,
-  .ps-row.yours {
-    margin-left: 0;
-    margin-right: 0;
+  .scores-list-row.top3,
+  .ps-row.top3 {
     padding-left: 12px;
     padding-right: 12px;
-    border-radius: 8px;
   }
 }
 
