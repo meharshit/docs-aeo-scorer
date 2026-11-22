@@ -1,0 +1,202 @@
+{
+  "id": "aeo-rubric",
+  "version": "0.1.1",
+  "title": "Developer docs AEO readiness",
+  "description": "Structural Answer Engine Optimization checks for developer documentation. Scores how well coding agents can find, read, and act on docs (retrieval path). Not Google SEO.",
+  "maxScore": 100,
+  "categories": [
+    {
+      "id": "discoverability",
+      "title": "Discoverability",
+      "weight": 25,
+      "description": "Agents can find the right entry points.",
+      "checks": [
+        {
+          "id": "llms-txt-present",
+          "title": "Add an llms.txt file",
+          "weight": 6,
+          "level": "should",
+          "howToFix": "Put a file at /llms.txt that lists your main docs pages with a short title and link for each."
+        },
+        {
+          "id": "llms-txt-size",
+          "title": "Keep llms.txt short enough",
+          "weight": 3,
+          "level": "should",
+          "howToFix": "Keep llms.txt under about 100,000 characters so AI tools can read it easily."
+        },
+        {
+          "id": "llms-txt-links-valid",
+          "title": "Fix broken links in llms.txt",
+          "weight": 4,
+          "level": "should",
+          "howToFix": "Open the links in llms.txt and make sure they load. Remove or fix any dead links."
+        },
+        {
+          "id": "agent-skills-index",
+          "title": "Publish an agent skills list",
+          "weight": 4,
+          "level": "should",
+          "howToFix": "Add /.well-known/agent-skills/index.json so tools can find your skills in one place."
+        },
+        {
+          "id": "skill-md-reachable",
+          "title": "Make skill files open correctly",
+          "weight": 3,
+          "level": "should",
+          "howToFix": "Each skill in your index should open a real skill.md page with a clear name and short description."
+        },
+        {
+          "id": "mcp-documented",
+          "title": "Explain how to connect MCP",
+          "weight": 3,
+          "level": "should",
+          "howToFix": "Add a simple docs page that shows how to connect your docs MCP in Cursor or Claude."
+        },
+        {
+          "id": "openapi-discoverable",
+          "title": "Share your OpenAPI file",
+          "weight": 2,
+          "level": "may",
+          "howToFix": "Publish openapi.json (or similar) and link it from your docs or llms.txt."
+        }
+      ]
+    },
+    {
+      "id": "readability",
+      "title": "Readability",
+      "weight": 30,
+      "description": "Agents can extract answers from fetched content.",
+      "checks": [
+        {
+          "id": "markdown-mirrors",
+          "title": "Offer Markdown versions of pages",
+          "weight": 8,
+          "level": "should",
+          "howToFix": "Let each docs page also load as .md, or publish an llms-full.txt file AI tools can read."
+        },
+        {
+          "id": "server-rendered-answers",
+          "title": "Put answers in the page HTML",
+          "weight": 7,
+          "level": "must",
+          "howToFix": "Make sure key how-to steps appear in the page source, not only after JavaScript loads."
+        },
+        {
+          "id": "clear-page-purpose",
+          "title": "Give each page one clear job",
+          "weight": 5,
+          "level": "should",
+          "howToFix": "Use one main heading and a short intro. Keep each page focused on one task."
+        },
+        {
+          "id": "code-samples",
+          "title": "Add copy-paste code samples",
+          "weight": 5,
+          "level": "should",
+          "howToFix": "On key how-to pages, add install commands or API examples people can copy."
+        },
+        {
+          "id": "corrections-section",
+          "title": "List common mistakes",
+          "weight": 3,
+          "level": "may",
+          "howToFix": "Add a short “common mistakes” or “outdated info” section so AI tools do not repeat old advice."
+        },
+        {
+          "id": "robots-allows-docs",
+          "title": "Don’t block docs in robots.txt",
+          "weight": 2,
+          "level": "should",
+          "howToFix": "In robots.txt, avoid blocking your whole site with Disallow: /."
+        }
+      ]
+    },
+    {
+      "id": "actability",
+      "title": "Actability",
+      "weight": 25,
+      "description": "Agents can complete tasks, not only read.",
+      "checks": [
+        {
+          "id": "mcp-endpoint",
+          "title": "Turn on a live MCP endpoint",
+          "weight": 7,
+          "level": "should",
+          "howToFix": "Host a working docs MCP endpoint (often at /mcp) and mention it in your docs."
+        },
+        {
+          "id": "task-skills",
+          "title": "Add step-by-step agent skills",
+          "weight": 6,
+          "level": "should",
+          "howToFix": "Create skills for real jobs (like “create a session” or “stream audio”), with clear steps and links to the right docs."
+        },
+        {
+          "id": "auth-for-agents",
+          "title": "Explain how to get API keys",
+          "weight": 4,
+          "level": "should",
+          "howToFix": "Write simple steps for getting a token or API key without needing a human-only UI."
+        },
+        {
+          "id": "copy-paste-prompts",
+          "title": "Add ready-to-paste prompts",
+          "weight": 4,
+          "level": "should",
+          "howToFix": "On important tutorials, add a prompt box users can paste into Cursor or Claude."
+        },
+        {
+          "id": "cookbooks",
+          "title": "Add end-to-end guides",
+          "weight": 4,
+          "level": "may",
+          "howToFix": "Publish cookbooks or quickstarts that walk through a full setup from start to finish."
+        }
+      ]
+    },
+    {
+      "id": "trust",
+      "title": "Trust and freshness",
+      "weight": 20,
+      "description": "Signals that content is current and consistent.",
+      "checks": [
+        {
+          "id": "version-or-updated",
+          "title": "Show versions or update dates",
+          "weight": 5,
+          "level": "should",
+          "howToFix": "Show API versions, “last updated” dates, or release notes on important pages."
+        },
+        {
+          "id": "skill-docs-consistency",
+          "title": "Keep skill links up to date",
+          "weight": 5,
+          "level": "should",
+          "howToFix": "Make sure every skill link still opens the correct live docs page."
+        },
+        {
+          "id": "changelog-present",
+          "title": "Publish a changelog",
+          "weight": 4,
+          "level": "may",
+          "howToFix": "Add release notes or a changelog so people and AI tools know what changed."
+        },
+        {
+          "id": "no-marketing-corrections",
+          "title": "Keep guidance factual",
+          "weight": 3,
+          "level": "should",
+          "howToFix": "When you correct AI mistakes, use facts and links — not marketing slogans."
+        },
+        {
+          "id": "https-canonical",
+          "title": "Use HTTPS",
+          "weight": 3,
+          "level": "must",
+          "howToFix": "Serve your docs on https:// with one stable main domain."
+        }
+      ]
+    }
+  ]
+}

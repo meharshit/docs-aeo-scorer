@@ -1,0 +1,36 @@
+{
+  "name": "@aeo-docs-scorer/scanner",
+  "version": "0.1.0",
+  "description": "Fetch and score developer docs against the AEO rubric.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "aeo-score": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "score": "node ./dist/cli.js"
+  },
+  "dependencies": {
+    "@aeo-docs-scorer/rubric": "0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6"
+  }
+}

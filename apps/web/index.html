@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Docs AEO Scorer — Check your AEO score</title>
+    <meta
+      name="description"
+      content="Paste a docs URL. Docs AEO Scorer runs live checks on how coding agents find, read and use your docs."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <link rel="stylesheet" href="/src/products-section.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <button type="button" class="brand" id="brand-home" aria-label="Docs AEO Scorer home">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>Docs AEO Scorer</span>
+        </button>
+        <nav class="header-nav" aria-label="Primary">
+          <a href="#method" id="nav-method">Method</a>
+          <a href="#learn" id="nav-learn">Learn</a>
+          <a
+            href="#"
+            id="nav-wotw"
+            title="URL coming soon"
+            >World of Technical Writing ↗</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <div class="progress-line" id="progress-line" hidden>
+      <div class="progress-line-fill" id="progress-line-fill"></div>
+    </div>
+
+    <main>
+      <!-- LANDING -->
+      <section id="view-landing" class="view">
+        <div class="container hero">
+          <div class="hero-copy">
+            <p class="label">Free AEO check for developer docs</p>
+            <h1>
+              Is your documentation <span class="mark">ready</span> for AI
+              agents?
+            </h1>
+            <p class="lead">
+              Paste a docs URL. We run live checks on how coding agents find,
+              read and use your docs, then tell you exactly what to fix first.
+            </p>
+
+            <form id="score-form" class="url-form" novalidate>
+              <label class="label" for="docs-url">Documentation URL</label>
+              <div class="url-row">
+                <input
+                  id="docs-url"
+                  name="docs-url"
+                  type="text"
+                  inputmode="url"
+                  autocomplete="url"
+                  placeholder="https://docs.yourproduct.com"
+                  aria-label="Documentation URL"
+                />
+                <button type="submit" class="btn-solid" id="score-btn">
+                  Score my docs →
+                </button>
+              </div>
+              <p id="form-error" class="field-error" hidden></p>
+            </form>
+
+            <p class="hint">
+              Try
+              <button type="button" class="hint-link" data-url="https://linear.app/docs">
+                linear.app/docs
+              </button>,
+              <button type="button" class="hint-link" data-url="https://docs.stripe.com">
+                docs.stripe.com
+              </button>
+              or
+              <button type="button" class="hint-link" data-url="https://developer.suki.ai">
+                developer.suki.ai
+              </button>
+            </p>
+          </div>
+
+          <aside class="sample-sheet" aria-label="Sample report">
+            <div class="sample-top">
+              <p class="label">Sample report</p>
+              <p class="sample-url">linear.app/docs</p>
+            </div>
+            <div class="sample-score">
+              <span class="sample-num">70.5</span>
+              <span class="sample-over">/ 100</span>
+            </div>
+            <p class="sample-grade">Grade B · Strong</p>
+            <div class="sample-rows">
+              <div class="sample-row">
+                <span>Discoverability</span>
+                <div class="bar" aria-hidden="true"><span style="width: 64%"></span></div>
+                <span class="sample-val">16 / 25</span>
+              </div>
+              <div class="sample-row">
+                <span>Readability</span>
+                <div class="bar" aria-hidden="true"><span style="width: 91%"></span></div>
+                <span class="sample-val">27.45 / 30</span>
+              </div>
+              <div class="sample-row">
+                <span>Actionability</span>
+                <div class="bar" aria-hidden="true"><span style="width: 48%"></span></div>
+                <span class="sample-val">12 / 25</span>
+              </div>
+              <div class="sample-row">
+                <span>Trust and freshness</span>
+                <div class="bar" aria-hidden="true"><span style="width: 75%"></span></div>
+                <span class="sample-val">15 / 20</span>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <section id="method" class="container section-block">
+          <div class="section-intro">
+            <p class="label">Method</p>
+            <h2>What we check</h2>
+            <p class="section-lead">
+              Four areas, 100 points. Every check runs against your live docs,
+              so nothing here is a sample score.
+            </p>
+          </div>
+          <div class="method-table" role="table" aria-label="What we check">
+            <div class="method-row method-row-first" role="row">
+              <span class="method-num" role="cell">01</span>
+              <span class="method-name" role="cell">Discoverability</span>
+              <div class="method-q" role="cell">
+                <p>Can agents find your docs and know where to start?</p>
+                <p class="method-signals">llms.txt · entry points · MCP</p>
+              </div>
+              <span class="method-pts" role="cell">25 pts</span>
+            </div>
+            <div class="method-row" role="row">
+              <span class="method-num" role="cell">02</span>
+              <span class="method-name" role="cell">Readability</span>
+              <div class="method-q" role="cell">
+                <p>Can agents read clean content without fighting the page?</p>
+                <p class="method-signals">Markdown mirrors · clean HTML</p>
+              </div>
+              <span class="method-pts" role="cell">30 pts</span>
+            </div>
+            <div class="method-row" role="row">
+              <span class="method-num" role="cell">03</span>
+              <span class="method-name" role="cell">Actionability</span>
+              <div class="method-q" role="cell">
+                <p>Can agents finish a real task from your docs alone?</p>
+                <p class="method-signals">Agent skills · OpenAPI</p>
+              </div>
+              <span class="method-pts" role="cell">25 pts</span>
+            </div>
+            <div class="method-row" role="row">
+              <span class="method-num" role="cell">04</span>
+              <span class="method-name" role="cell">Trust and freshness</span>
+              <div class="method-q" role="cell">
+                <p>Can agents tell what is current and what is outdated?</p>
+                <p class="method-signals">Freshness signals</p>
+              </div>
+              <span class="method-pts" role="cell">20 pts</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="container section-block" id="scoring">
+          <div class="section-intro">
+            <p class="label">Scoring</p>
+            <h2>How the score works</h2>
+            <p class="section-lead">
+              The four areas add up to a score out of 100. The score maps to a
+              grade.
+            </p>
+          </div>
+          <div class="scoring-right">
+            <div id="landing-ruler"></div>
+            <div class="steps">
+              <div class="step">
+                <p class="step-num">01</p>
+                <h3>Paste a URL</h3>
+                <p>Any public docs page or docs home works.</p>
+              </div>
+              <div class="step">
+                <p class="step-num">02</p>
+                <h3>We run live checks</h3>
+                <p>We look for the files and signals coding agents rely on.</p>
+              </div>
+              <div class="step">
+                <p class="step-num">03</p>
+                <h3>Fix and re-check</h3>
+                <p>You get a ranked list. Ship the fixes, then score again.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="learn" class="container products-section">
+          <div class="products-top">
+            <div class="section-intro">
+              <p class="label">From the author</p>
+              <h2>Learn to fix what the score finds</h2>
+            </div>
+            <p class="products-intro">
+              The scorer shows the gaps. These guides show you how to close
+              them, with rules, agent skills and automation you can reuse on
+              every docs project.
+            </p>
+          </div>
+
+          <div class="products-grid">
+            <article class="product-sheet">
+              <div class="product-cover" aria-hidden="true">
+                <p class="product-cover-kicker">Book</p>
+                <span class="product-cover-bar"></span>
+                <p class="product-cover-title">
+                  The AI-Native<br />Technical <span class="hi">Writer</span>
+                </p>
+                <p class="product-cover-bottom">Harshit Satyaseel</p>
+              </div>
+              <p class="label">Book · EPUB and PDF</p>
+              <h3>The AI-Native Technical Writer</h3>
+              <p class="product-desc">
+                A practical guide to AI-powered API documentation, docs-as-code,
+                automation and agentic workflows.
+              </p>
+              <ul class="product-list">
+                <li>
+                  <span class="tick">✓</span>
+                  <span>Persistent AI rules and reusable agent skills</span>
+                </li>
+                <li>
+                  <span class="tick">✓</span>
+                  <span>Quality gates in CI/CD before review</span>
+                </li>
+                <li>
+                  <span class="tick">✓</span>
+                  <span>A field kit of templates you can copy</span>
+                </li>
+              </ul>
+              <div class="product-buy">
+                <a
+                  class="gumroad-button"
+                  href="https://satyaseel.gumroad.com/l/ai-native-technical-writing"
+                  rel="noopener"
+                  >Get the book</a
+                >
+                <p class="product-buy-note">on Gumroad</p>
+              </div>
+            </article>
+
+            <article class="product-sheet">
+              <div class="product-cover" aria-hidden="true">
+                <p class="product-cover-kicker">Course</p>
+                <span class="product-cover-bar"></span>
+                <p class="product-cover-title">
+                  API docs<br /><span class="hi">with AI</span>
+                </p>
+                <p class="product-cover-bottom">Harshit Satyaseel</p>
+              </div>
+              <p class="label">Course · 18 labs</p>
+              <h3>Learn API Documentation with AI</h3>
+              <p class="product-desc">
+                From your first API call to a complete AI-assisted docs system,
+                built on one real project.
+              </p>
+              <ul class="product-list">
+                <li>
+                  <span class="tick">✓</span>
+                  <span>Document a full payments API from start to finish</span>
+                </li>
+                <li>
+                  <span class="tick">✓</span>
+                  <span>18 hands-on labs with done-when checklists</span>
+                </li>
+                <li>
+                  <span class="tick">✓</span>
+                  <span
+                    >Tools you keep: mock server, spec checker, drift
+                    script</span
+                  >
+                </li>
+              </ul>
+              <div class="product-buy">
+                <a
+                  class="gumroad-button"
+                  href="https://satyaseel.gumroad.com/l/tlapqh"
+                  rel="noopener"
+                  >Get the course</a
+                >
+                <p class="product-buy-note">on Gumroad</p>
+              </div>
+            </article>
+
+            <article class="product-sheet product-sheet-featured">
+              <div class="product-cover" aria-hidden="true">
+                <p class="product-cover-kicker">Bundle · 6 in 1</p>
+                <span class="product-cover-bar"></span>
+                <p class="product-cover-title">
+                  AI Technical Writer<br /><span class="hi">Career Kit</span>
+                </p>
+                <p class="product-cover-bottom">Save 40%</p>
+              </div>
+              <p class="label">Bundle · best value</p>
+              <h3>The AI Technical Writer Career Kit</h3>
+              <p class="product-desc">
+                Six products in one bundle: the skills, the job and the tools.
+              </p>
+              <ul class="product-list">
+                <li>
+                  <span class="tick">✓</span>
+                  <span>The book and the API docs course</span>
+                </li>
+                <li>
+                  <span class="tick">✓</span>
+                  <span>Interview guide and resume templates kit</span>
+                </li>
+                <li>
+                  <span class="tick">✓</span>
+                  <span>PRD to Docs AI skill and 30 prompts</span>
+                </li>
+              </ul>
+              <div class="product-buy">
+                <a
+                  class="gumroad-button"
+                  href="https://satyaseel.gumroad.com/l/lugozs"
+                  rel="noopener"
+                  >Get the bundle</a
+                >
+                <p class="product-buy-note">on Gumroad</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <!-- CHECKING -->
+      <section id="view-checking" class="view" hidden>
+        <div class="container checking">
+          <div class="checking-left">
+            <p class="label">Checking</p>
+            <h1 class="checking-url" id="checking-url"></h1>
+            <p class="checking-lead">
+              Running live checks against your documentation. Keep this tab
+              open.
+            </p>
+            <p class="checking-pct">
+              <span id="checking-percent">0</span><span class="pct-sign">%</span>
+            </p>
+            <div class="sr-live" aria-live="polite" id="checking-live"></div>
+            <p id="checking-error" class="field-error" hidden></p>
+            <button type="button" class="text-link" id="try-again" hidden>
+              Try again
+            </button>
+          </div>
+          <ol class="check-log" id="check-log"></ol>
+        </div>
+      </section>
+
+      <!-- RESULTS -->
+      <section id="view-results" class="view" hidden>
+        <div class="container">
+          <div class="report-header">
+            <div>
+              <p class="label">AEO report</p>
+              <h1 class="report-url" id="report-url"></h1>
+              <p class="report-meta" id="report-meta"></p>
+            </div>
+            <div class="report-actions">
+              <button type="button" class="text-link" id="copy-md">
+                Copy as Markdown
+              </button>
+              <button type="button" class="text-link" id="rescore-link">
+                Re-score
+              </button>
+              <button type="button" class="btn-solid" id="share-btn">
+                Share report
+              </button>
+            </div>
+          </div>
+
+          <div class="score-block">
+            <div class="score-left">
+              <div class="score-big-row">
+                <span class="score-big" id="score-value">0</span>
+                <span class="score-over">/ 100</span>
+              </div>
+              <p class="score-grade" id="score-grade"></p>
+            </div>
+            <div class="score-right">
+              <p class="score-headline" id="score-headline"></p>
+              <p class="score-body" id="score-body"></p>
+              <div class="score-counts" id="score-counts"></div>
+            </div>
+          </div>
+
+          <div id="results-ruler"></div>
+
+          <div class="areas" id="areas"></div>
+
+          <section class="recs">
+            <div class="recs-top">
+              <div>
+                <p class="label">Recommendations</p>
+                <h2>What to fix first</h2>
+              </div>
+              <p class="recs-rank">Ranked by impact</p>
+            </div>
+            <div id="recs-list"></div>
+          </section>
+
+          <div class="closing">
+            <div>
+              <p class="closing-title">Shipped your fixes?</p>
+              <p class="closing-body">
+                Score the same URL again to see how far you moved.
+              </p>
+            </div>
+            <div class="closing-actions">
+              <button type="button" class="text-link" id="another-url">
+                Check another URL
+              </button>
+              <button type="button" class="btn-solid" id="rescore-btn">
+                Re-score →
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>
+          <b>Docs AEO Scorer</b> is a free tool from World of Technical Writing,
+          built by Harshit Satyaseel.
+        </p>
+        <p>Every score comes from live checks against your docs.</p>
+      </div>
+    </footer>
+
+    <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+
+    <script type="module" src="/src/main.ts"></script>
+    <script src="https://gumroad.com/js/gumroad.js" defer></script>
+  </body>
+</html>

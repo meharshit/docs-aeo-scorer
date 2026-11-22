@@ -1,0 +1,28 @@
+{
+  "name": "aeo-docs-scorer",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Score developer documentation for Answer Engine Optimization (AEO): llms.txt, agent skills, MCP, markdown mirrors, and more.",
+  "license": "MIT",
+  "author": "meharshit",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @aeo-docs-scorer/rubric && npm run build -w @aeo-docs-scorer/scanner && npm run build -w @aeo-docs-scorer/web",
+    "test": "npm run test -w @aeo-docs-scorer/rubric && npm run test -w @aeo-docs-scorer/scanner && vitest run apps/web/rate-limit.test.ts",
+    "typecheck": "npm run typecheck -w @aeo-docs-scorer/rubric && npm run typecheck -w @aeo-docs-scorer/scanner && npm run typecheck -w @aeo-docs-scorer/web",
+    "dev:web": "npm run dev -w @aeo-docs-scorer/web",
+    "score": "npm run score -w @aeo-docs-scorer/scanner --"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
