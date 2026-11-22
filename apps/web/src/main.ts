@@ -83,10 +83,22 @@ const scoresPager = document.querySelector<HTMLElement>("#scores-pager");
 const scoresSearch = document.querySelector<HTMLInputElement>("#scores-search");
 const scoresStats = document.querySelector<HTMLElement>("#scores-stats");
 const scoresLive = document.querySelector<HTMLElement>("#scores-live");
+const scoresLoading = document.querySelector<HTMLElement>("#scores-loading");
 const statSites = document.querySelector<HTMLElement>("#stat-sites");
 const statAverage = document.querySelector<HTMLElement>("#stat-average");
 const statTop = document.querySelector<HTMLElement>("#stat-top");
 const statStrong = document.querySelector<HTMLElement>("#stat-strong");
+
+function setScoresLoading(on: boolean): void {
+  if (scoresLoading) scoresLoading.hidden = !on;
+  if (on) {
+    if (scoresList) scoresList.innerHTML = "";
+    if (scoresEmpty) scoresEmpty.hidden = true;
+    if (scoresListHead) scoresListHead.hidden = true;
+    if (scoresFoot) scoresFoot.hidden = true;
+    if (scoresLive) scoresLive.textContent = "Loading public scores";
+  }
+}
 
 let currentUrl = "";
 let currentReport: Report | null = null;
@@ -268,6 +280,13 @@ function renderCheckLog(
 
 async function loadLandingTop(): Promise<void> {
   if (!publicLandingTop) return;
+  if (publicLandingEmpty) publicLandingEmpty.hidden = true;
+  publicLandingTop.innerHTML = `
+    <div class="ps-loading" role="status" aria-live="polite">
+      <span class="ps-spinner" aria-hidden="true"></span>
+      <span>Loading public scores…</span>
+    </div>
+  `;
   try {
     const response = await fetch("/api/public-scores/top?limit=5");
     if (!response.ok) throw new Error("top failed");
@@ -732,6 +751,7 @@ async function loadScoresPage(pushUrl = false): Promise<void> {
   if (!scoresList) return;
   applyScoresControlsFromState();
   syncScoresUrl(pushUrl);
+  setScoresLoading(true);
 
   const params = new URLSearchParams({
     sort: scoresSort,
@@ -757,6 +777,7 @@ async function loadScoresPage(pushUrl = false): Promise<void> {
       rows: Parameters<typeof renderScoresListRows>[0];
     };
 
+    setScoresLoading(false);
     if (scoresStats) scoresStats.hidden = false;
     if (statSites) statSites.textContent = String(data.stats.sites);
     if (statAverage) statAverage.textContent = String(data.stats.average);
@@ -824,6 +845,7 @@ async function loadScoresPage(pushUrl = false): Promise<void> {
         });
     }
   } catch {
+    setScoresLoading(false);
     scoresList.innerHTML = `<li class="scores-empty">Could not load public scores. Try again shortly.</li>`;
     if (scoresEmpty) scoresEmpty.hidden = true;
     if (scoresFoot) scoresFoot.hidden = true;

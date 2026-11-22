@@ -233,7 +233,17 @@
                 Be the first to add your docs.
               </p>
             </div>
-            <div id="public-landing-top"></div>
+            <div id="public-landing-top">
+              <div
+                class="ps-loading"
+                id="public-landing-loading"
+                role="status"
+                aria-live="polite"
+              >
+                <span class="ps-spinner" aria-hidden="true"></span>
+                <span>Loading public scores…</span>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -601,6 +611,17 @@
             and freshness
           </p>
           <p class="scores-live" id="scores-live" aria-live="polite"></p>
+
+          <div
+            class="ps-loading"
+            id="scores-loading"
+            role="status"
+            aria-live="polite"
+            hidden
+          >
+            <span class="ps-spinner" aria-hidden="true"></span>
+            <span>Loading public scores…</span>
+          </div>
 
           <div class="scores-list-head" id="scores-list-head" hidden>
             <span>Rank</span>
